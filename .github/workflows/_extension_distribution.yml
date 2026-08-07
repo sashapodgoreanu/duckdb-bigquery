@@ -29,7 +29,7 @@ on:
       extension_canonical:
         required: false
         type: string
-      # DuckDB version to build against, should in most cases be identical to
+      # If our extension is an alias extension, the name of the canonical extension
       duckdb_version:
         required: true
         type: string
@@ -457,7 +457,7 @@ jobs:
           key: ccache-extension-distribution-${{ matrix.duckdb_arch }}-${{ inputs.duckdb_version }}-${{ steps.ccache_timestamp.outputs.timestamp }}
 
       - id: "auth"
-        if: ${{ matrix.duckdb_arch != 'linux_arm64' }}
+        if: ${{ matrix.duckdb_arch != 'linux_arm64' && inputs.skip_tests == false }}
         uses: "google-github-actions/auth@v3"
         with:
           credentials_json: "${{ secrets.GCS_SERVICE_ACCOUNT_KEY }}"
@@ -713,6 +713,7 @@ jobs:
           EXTENSION_NAME=${{ inputs.extension_name }} EXTENSION_CANONICAL=${{ inputs.extension_canonical }} make ${{ inputs.build_type }}
 
       - id: "auth"
+        if: ${{ inputs.skip_tests == false }}
         uses: "google-github-actions/auth@v2"
         with:
           credentials_json: "${{ secrets.GCS_SERVICE_ACCOUNT_KEY }}"
@@ -973,6 +974,7 @@ jobs:
           make ${{ inputs.build_type }}
 
       - id: "auth"
+        if: ${{ inputs.skip_tests == false }}
         uses: "google-github-actions/auth@v2"
         with:
           credentials_json: "${{ secrets.GCS_SERVICE_ACCOUNT_KEY }}"
