@@ -18,6 +18,7 @@ set_directory_properties(PROPERTIES EP_BASE ${CMAKE_BINARY_DIR}/projects)
 ExternalProject_Add(
     gcp
     URL ${CMAKE_CURRENT_SOURCE_DIR}/vendor/google-cloud-cpp-2.38.0.zip
+    PATCH_COMMAND patch -p1 -i ${CMAKE_CURRENT_SOURCE_DIR}/patches/google-cloud-cpp-2.38.0-schannel-revoke-best-effort.patch
     # CONFIGURE_HANDLED_BY_BUILD TRUE
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${LOCAL_INSTALL_DIR}
                -DCMAKE_PREFIX_PATH=${LOCAL_INSTALL_DIR}
