@@ -1,7 +1,8 @@
 #
-# This workflow calls the main distribution pipeline from DuckDB to build, test and (optionally) release the extension
+# Build and test the DuckDB BigQuery extension for DuckDB 1.4.4.
+# Produces GitHub Actions extension artifacts only; no deployment or NuGet packaging.
 #
-name: Main Extension Distribution Pipeline
+name: DuckDB 1.4.4 Extension Build
 on:
     push:
     pull_request:
@@ -22,32 +23,19 @@ jobs:
             format_checks: "format"
 
     duckdb-stable-build:
-        name: Build extension binaries
+        name: Build Windows and Linux extension binaries
         if: |
             github.event_name == 'pull_request' ||
-            (github.event_name == 'push' && github.ref_name == 'main') ||
-            (github.event_name == 'push' && github.ref_type == 'tag')
+            github.event_name == 'workflow_dispatch' ||
+            (github.event_name == 'push' && github.ref_name == 'duckdb_v1.4.4')
         uses: ./.github/workflows/_extension_distribution.yml
         secrets: inherit
         with:
             extension_name: bigquery
             duckdb_version: v1.4.4
             ci_tools_version: v1.4.4
-            exclude_archs: "wasm_mvp;wasm_eh;wasm_threads;windows_amd64_mingw;"
+            exclude_archs: "linux_arm64;linux_amd64_musl;osx_amd64;osx_arm64;wasm_mvp;wasm_eh;wasm_threads;windows_arm64;windows_amd64_mingw;"
             vcpkg_commit: "ef7dbf94b9198bc58f45951adcf1f041fcbc5ea0"
             extra_toolchains: "parser_tools"
-            save_cache: ${{ github.event_name != 'pull_request' }}
-            reduced_ci_mode: "disabled"
-
-    duckdb-stable-deploy:
-        name: Deploy extension binaries
-        needs: duckdb-stable-build
-        uses: ./.github/workflows/_extension_deploy.yml
-        secrets: inherit
-        with:
-            extension_name: bigquery
-            duckdb_version: v1.4.4
-            ci_tools_version: v1.4.4
-            exclude_archs: "wasm_mvp;wasm_eh;wasm_threads;windows_amd64_mingw;"
-            deploy_latest: ${{ startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main' }}
+            save_cache: false
             reduced_ci_mode: "disabled"
