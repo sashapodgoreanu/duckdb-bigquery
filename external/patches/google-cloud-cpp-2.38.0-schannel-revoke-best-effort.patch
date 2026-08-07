@@ -22,7 +22,8 @@ diff --git a/google/cloud/internal/curl_handle_factory.cc b/google/cloud/interna
  #ifdef GOOGLE_CLOUD_CPP_HAVE_OPENSSL
  struct BIOPtrCleanup {
    int operator()(BIO* b) const { return BIO_free(b); }
-@@ -144,6 +159,7 @@ void DefaultCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
+@@ -180,6 +195,7 @@ void DefaultCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
+   m.reset();
  }
  
  void DefaultCurlHandleFactory::SetCurlOptions(CURL* handle) {
@@ -30,7 +31,8 @@ diff --git a/google/cloud/internal/curl_handle_factory.cc b/google/cloud/interna
    if (ssl_ctx_callback_) {
      SetCurlStringOption(handle, CURLOPT_CAINFO, nullptr);
      SetCurlStringOption(handle, CURLOPT_CAPATH, nullptr);
-@@ -266,6 +282,7 @@ void PooledCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
+@@ -351,6 +367,7 @@ void PooledCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
+   active_multi_handles_ -= released.size();
  }
  
  void PooledCurlHandleFactory::SetCurlOptions(CURL* handle) {
