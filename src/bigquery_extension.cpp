@@ -11,6 +11,8 @@
 // OpenSSL linked through vcpkg
 #include <openssl/opensslv.h>
 
+#include "google/cloud/internal/curl_handle_factory.h"
+
 #include "bigquery_arrow_scan.hpp"
 #include "bigquery_attach.hpp"
 #include "bigquery_clear_cache.hpp"
@@ -29,6 +31,17 @@
 #include <iostream>
 
 namespace duckdb {
+
+static bool &CurlSslRevokeBestEffort() {
+    static bool CURL_SSL_REVOKE_BEST_EFFORT = false;
+    return CURL_SSL_REVOKE_BEST_EFFORT;
+}
+
+static void SetCurlSslRevokeBestEffort(ClientContext &context, SetScope scope, Value &parameter) {
+    auto enabled = BooleanValue::Get(parameter);
+    CurlSslRevokeBestEffort() = enabled;
+    google::cloud::rest_internal::SetCurlSslRevokeBestEffort(enabled);
+}
 
 static void LoadInternal(ExtensionLoader &loader) {
 
@@ -108,6 +121,12 @@ static void LoadInternal(ExtensionLoader &loader) {
                               LogicalType::VARCHAR,
                               Value(bigquery::BigquerySettings::CurlCaBundlePath()),
                               bigquery::BigquerySettings::SetCurlCaBundlePath);
+    config.AddExtensionOption("bq_curl_ssl_revoke_best_effort",
+                              "On Windows with Schannel, allow cURL requests to continue when certificate revocation "
+                              "distribution points are missing or offline. Has no effect on non-Windows platforms.",
+                              LogicalType::BOOLEAN,
+                              Value(CurlSslRevokeBestEffort()),
+                              SetCurlSslRevokeBestEffort);
     config.AddExtensionOption("bq_max_read_streams",
                               "Maximum number of read streams for BigQuery Storage Read. Set to 0 to automatically "
                               "match the number of DuckDB threads. `preserve_insertion_order` must be false for "
