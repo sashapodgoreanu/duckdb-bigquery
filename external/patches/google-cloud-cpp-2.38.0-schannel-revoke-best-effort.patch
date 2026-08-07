@@ -1,0 +1,38 @@
+diff --git a/google/cloud/internal/curl_handle_factory.cc b/google/cloud/internal/curl_handle_factory.cc
+index fd501423..e68fbd4a 100644
+--- a/google/cloud/internal/curl_handle_factory.cc
++++ b/google/cloud/internal/curl_handle_factory.cc
+@@ -182,6 +182,16 @@ void DefaultCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
+ }
+ 
+ void DefaultCurlHandleFactory::SetCurlOptions(CURL* handle) {
++#ifdef _WIN32
++  auto ssl_options_result = curl_easy_setopt(
++      handle, CURLOPT_SSL_OPTIONS,
++      static_cast<long>(CURLSSLOPT_REVOKE_BEST_EFFORT));
++  if (ssl_options_result != CURLE_OK) {
++    GCP_LOG(FATAL) << internal::InternalError(
++        curl_easy_strerror(ssl_options_result), GCP_ERROR_INFO());
++  }
++#endif
++
+   if (ssl_ctx_callback_) {
+     SetCurlStringOption(handle, CURLOPT_CAINFO, nullptr);
+     SetCurlStringOption(handle, CURLOPT_CAPATH, nullptr);
+@@ -353,6 +363,16 @@ void PooledCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
+ }
+ 
+ void PooledCurlHandleFactory::SetCurlOptions(CURL* handle) {
++#ifdef _WIN32
++  auto ssl_options_result = curl_easy_setopt(
++      handle, CURLOPT_SSL_OPTIONS,
++      static_cast<long>(CURLSSLOPT_REVOKE_BEST_EFFORT));
++  if (ssl_options_result != CURLE_OK) {
++    GCP_LOG(FATAL) << internal::InternalError(
++        curl_easy_strerror(ssl_options_result), GCP_ERROR_INFO());
++  }
++#endif
++
+   if (ssl_ctx_callback_) {
+     SetCurlStringOption(handle, CURLOPT_CAINFO, nullptr);
+     SetCurlStringOption(handle, CURLOPT_CAPATH, nullptr);
