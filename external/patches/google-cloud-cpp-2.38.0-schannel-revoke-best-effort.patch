@@ -1,35 +1,81 @@
+diff --git a/google/cloud/internal/curl_handle_factory.h b/google/cloud/internal/curl_handle_factory.h
+index d6b49beb..3e935cc1 100644
+--- a/google/cloud/internal/curl_handle_factory.h
++++ b/google/cloud/internal/curl_handle_factory.h
+@@ -64,6 +64,8 @@ class CurlHandleFactory {
+                                    char const* value);
+ };
+ 
++void SetCurlSslRevokeBestEffort(bool enabled);
++
+ std::shared_ptr<CurlHandleFactory> GetDefaultCurlHandleFactory(
+     Options const& options);
+ std::shared_ptr<CurlHandleFactory> GetDefaultCurlHandleFactory();
 diff --git a/google/cloud/internal/curl_handle_factory.cc b/google/cloud/internal/curl_handle_factory.cc
-index fd501423..e68fbd4a 100644
+index fd501423..a3c1d5d2 100644
 --- a/google/cloud/internal/curl_handle_factory.cc
 +++ b/google/cloud/internal/curl_handle_factory.cc
-@@ -182,6 +182,16 @@ void DefaultCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
+@@ -22,12 +22,15 @@
+ #include <openssl/ssl.h>
+ #endif
+ #include <algorithm>
++#include <atomic>
+ #include <iterator>
+ 
+ namespace google {
+ namespace cloud {
+ namespace rest_internal {
+ GOOGLE_CLOUD_CPP_INLINE_NAMESPACE_BEGIN
+ namespace {
+ 
++std::atomic<bool> g_curl_ssl_revoke_best_effort{false};
++
+ #ifdef GOOGLE_CLOUD_CPP_HAVE_OPENSSL
+ struct BIOPtrCleanup {
+   int operator()(BIO* b) const { return BIO_free(b); }
+@@ -115,6 +118,11 @@ static CURLcode SslCtxSanitized(  // NOLINT(misc-use-anonymous-namespace)
+ }
+ }
+ 
++void SetCurlSslRevokeBestEffort(bool enabled) {
++  g_curl_ssl_revoke_best_effort.store(enabled, std::memory_order_relaxed);
++}
++
+ void CurlHandleFactory::SetCurlStringOption(CURL* handle, CURLoption option_tag,
+                                             char const* value) {
+   curl_easy_setopt(handle, option_tag, value);
+@@ -182,6 +190,18 @@ void DefaultCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
  }
  
  void DefaultCurlHandleFactory::SetCurlOptions(CURL* handle) {
 +#ifdef _WIN32
-+  auto ssl_options_result = curl_easy_setopt(
-+      handle, CURLOPT_SSL_OPTIONS,
-+      static_cast<long>(CURLSSLOPT_REVOKE_BEST_EFFORT));
-+  if (ssl_options_result != CURLE_OK) {
-+    GCP_LOG(FATAL) << internal::InternalError(
-+        curl_easy_strerror(ssl_options_result), GCP_ERROR_INFO());
++  if (g_curl_ssl_revoke_best_effort.load(std::memory_order_relaxed)) {
++    auto ssl_options_result = curl_easy_setopt(
++        handle, CURLOPT_SSL_OPTIONS,
++        static_cast<long>(CURLSSLOPT_REVOKE_BEST_EFFORT));
++    if (ssl_options_result != CURLE_OK) {
++      GCP_LOG(FATAL) << internal::InternalError(
++          curl_easy_strerror(ssl_options_result), GCP_ERROR_INFO());
++    }
 +  }
 +#endif
 +
    if (ssl_ctx_callback_) {
      SetCurlStringOption(handle, CURLOPT_CAINFO, nullptr);
      SetCurlStringOption(handle, CURLOPT_CAPATH, nullptr);
-@@ -353,6 +363,16 @@ void PooledCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
+@@ -353,6 +373,18 @@ void PooledCurlHandleFactory::CleanupMultiHandle(CurlMulti m,
  }
  
  void PooledCurlHandleFactory::SetCurlOptions(CURL* handle) {
 +#ifdef _WIN32
-+  auto ssl_options_result = curl_easy_setopt(
-+      handle, CURLOPT_SSL_OPTIONS,
-+      static_cast<long>(CURLSSLOPT_REVOKE_BEST_EFFORT));
-+  if (ssl_options_result != CURLE_OK) {
-+    GCP_LOG(FATAL) << internal::InternalError(
-+        curl_easy_strerror(ssl_options_result), GCP_ERROR_INFO());
++  if (g_curl_ssl_revoke_best_effort.load(std::memory_order_relaxed)) {
++    auto ssl_options_result = curl_easy_setopt(
++        handle, CURLOPT_SSL_OPTIONS,
++        static_cast<long>(CURLSSLOPT_REVOKE_BEST_EFFORT));
++    if (ssl_options_result != CURLE_OK) {
++      GCP_LOG(FATAL) << internal::InternalError(
++          curl_easy_strerror(ssl_options_result), GCP_ERROR_INFO());
++    }
 +  }
 +#endif
 +
