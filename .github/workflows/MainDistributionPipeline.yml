@@ -28,7 +28,10 @@ jobs:
             github.event_name == 'pull_request' ||
             github.event_name == 'workflow_dispatch' ||
             (github.event_name == 'push' && github.ref_name == 'duckdb_v1.4.4')
-        uses: ./.github/workflows/_extension_distribution.yml
+        # Reuse the newer CI orchestration from main. It explicitly selects MSVC
+        # for windows_amd64 and supports both the VS18 and VS2022 vcvars paths.
+        # The extension itself is still built against DuckDB/CI tools v1.4.4.
+        uses: sashapodgoreanu/duckdb-bigquery/.github/workflows/_extension_distribution.yml@main
         secrets: inherit
         with:
             extension_name: bigquery

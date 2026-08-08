@@ -5,15 +5,6 @@ PROJ_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 EXT_NAME=bigquery
 EXT_CONFIG=${PROJ_DIR}extension_config.cmake
 
-# The DuckDB 1.4.4 Windows CI matrix uses an MSVC-compatible vcpkg triplet.
-# Force the normal windows_amd64 build to use MSVC so CMake cannot pick up
-# MinGW from the GitHub runner PATH. Explicit MinGW/RTools architectures are
-# unaffected because they use different DUCKDB_PLATFORM values.
-ifeq ($(DUCKDB_PLATFORM),windows_amd64)
-export CC := cl
-export CXX := cl
-endif
-
 # # ---------------------------------------------
 # # Enable AddressSanitizer (and UBSan) globally
 # EXT_DEBUG_FLAGS   += -DENABLE_SANITIZER=1 -DENABLE_UBSAN=1
@@ -34,7 +25,7 @@ lint:
 	python3 ./scripts/run-clang-tidy.py $(MAKEFILE_DIR)/src/* \
 		-config-file ./.clang-tidy \
 		-extra-arg-before=-std=c++11 \
-		-header-filter="src/include/*.\(h|hpp)" \
+		-header-filter="src/include/*.\(h|hpp\)" \
 		-j 4 \
 		-p=build/debug/
 
