@@ -67,6 +67,19 @@ find_package(absl CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
 find_package(Protobuf CONFIG REQUIRED)
+
+# Arrow 20's FindSnappyAlt.cmake checks for Snappy::snappy-static first.
+# The release-only static Windows vcpkg triplet exports Snappy::snappy with a
+# configuration-specific IMPORTED_LOCATION_RELEASE, which Arrow 20 does not
+# recognize correctly and then incorrectly falls back to Snappy_LIB discovery.
+# The triplet is static, so provide the static target name Arrow expects.
+if(WIN32)
+    find_package(Snappy CONFIG REQUIRED)
+    if(TARGET Snappy::snappy AND NOT TARGET Snappy::snappy-static)
+        add_library(Snappy::snappy-static ALIAS Snappy::snappy)
+    endif()
+endif()
+
 find_package(Arrow REQUIRED)
 find_package(CURL REQUIRED)
 find_package(OpenSSL REQUIRED)
